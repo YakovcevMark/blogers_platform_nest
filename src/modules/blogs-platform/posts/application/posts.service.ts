@@ -1,14 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PostsRepository } from '../infrastracture/repo';
-import { UsersRepository } from '../../../users/infrastructure/repo';
+import { UsersRepository } from '../../../users/infrastructure/users.repo';
 import { LikeStatus } from '../../../../core/enums/like-status';
 import { PostModel, PostModelName } from '../domain/post.entity';
 import { InjectModel } from '@nestjs/mongoose';
-import { BlogsQueryRepository } from '../../blogs/infrastracture/query-repo';
 import { UpdatePostDto } from '../api/input-dto/update-post.input-dto';
-import { PostLikeModelName, PostLikeModel } from '../domain/post-likes.entity';
+import { PostLikeModel, PostLikeModelName } from '../domain/post-likes.entity';
 import { CreatePostDomainDto } from '../domain/dto/create-post-domain.input-dto';
-import { CreatePostInputDto } from '../api/input-dto/post.input-dto';
+import { DomainNotFoundException } from '../../../../core/exceptions/domain-exceptions';
 
 @Injectable()
 export class PostsService {
@@ -28,7 +27,7 @@ export class PostsService {
   async update(id: string, body: UpdatePostDto) {
     const post = await this.postsRepository.getById(id);
     if (!post) {
-      throw new NotFoundException('Post not found');
+      throw new DomainNotFoundException('Post not found');
     }
     post.update(body);
     await this.postsRepository.savePost(post);
@@ -37,7 +36,7 @@ export class PostsService {
   async remove(id: string) {
     const isDeleted = await this.postsRepository.remove(id);
     if (!isDeleted) {
-      throw new NotFoundException('Post not found');
+      throw new DomainNotFoundException('Post not found');
     }
   }
 
@@ -45,7 +44,7 @@ export class PostsService {
     const post = await this.postsRepository.getById(postId);
     const user = await this.usersRepository.getById(userId);
     if (!post) {
-      throw new NotFoundException('Post not found');
+      throw new DomainNotFoundException('Post not found');
     }
 
     const like = await this.postsRepository.getLikeRecord(postId, userId);

@@ -1,12 +1,13 @@
 import { BcryptService } from '../../../core/application/bcrypt.service';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UserModel, UserModelName } from '../domain/user.entity';
 import { InjectModel } from '@nestjs/mongoose';
-import { UsersRepository } from '../infrastructure/repo';
+import { UsersRepository } from '../infrastructure/users.repo';
 import { CreateUserInputDto } from '../api/input-dto/user.input-dto';
+import { DomainNotFoundException } from '../../../core/exceptions/domain-exceptions';
 
 @Injectable()
-export class UserService {
+export class UsersService {
   constructor(
     @InjectModel(UserModelName) protected UserModel: UserModel,
     protected usersRepository: UsersRepository,
@@ -36,6 +37,6 @@ export class UserService {
 
   public remove = async (id: string) => {
     const isDeleted = await this.usersRepository.remove(id);
-    if (!isDeleted) throw new NotFoundException('User not found');
+    if (!isDeleted) throw new DomainNotFoundException('User not found');
   };
 }

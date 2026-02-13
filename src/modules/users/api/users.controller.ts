@@ -8,25 +8,27 @@ import {
   Param,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { UsersQueryRepository } from '../infrastructure/query-repo';
-import { UserService } from '../application/users.service';
+import { UsersQueryRepository } from '../infrastructure/users.query-repo';
+import { UsersService } from '../application/users.service';
 import { GetUsersQueryParams } from './input-dto/get-users-query-params.input-dto';
 import { ApiParam } from '@nestjs/swagger';
 import { CreateUserInputDto } from './input-dto/user.input-dto';
+import { BasicAuthGuard } from '../guards/basic-auth.guard';
 
+@UseGuards(BasicAuthGuard)
 @Controller('users')
 export class UsersController {
   constructor(
     private usersQueryRepository: UsersQueryRepository,
-    private usersService: UserService,
+    private usersService: UsersService,
   ) {}
 
   @Get()
   async getUsers(@Query() query: GetUsersQueryParams) {
     return this.usersQueryRepository.getAll(query);
   }
-
   @Post()
   async createUser(@Body() body: CreateUserInputDto) {
     const id = await this.usersService.create(body);

@@ -1,7 +1,7 @@
 import { CommentsRepository } from '../infrastracture/repo';
 import { PostsRepository } from '../../posts/infrastracture/repo';
-import { UsersRepository } from '../../../users/infrastructure/repo';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { UsersRepository } from '../../../users/infrastructure/users.repo';
+import { Injectable } from '@nestjs/common';
 import { CreateCommentInputDto } from '../api/input-dto/comment.input-dto';
 import { CommentModel, CommentModelName } from '../domain/comment.entity';
 import { InjectModel } from '@nestjs/mongoose';
@@ -11,6 +11,7 @@ import {
   CommentLikeModel,
   CommentLikeModelName,
 } from '../domain/comment-like.entity';
+import { DomainNotFoundException } from '../../../../core/exceptions/domain-exceptions';
 
 @Injectable()
 export class CommentsService {
@@ -29,10 +30,10 @@ export class CommentsService {
     userId?: string,
   ): Promise<string> {
     const post = await this.postsRepository.getById(postId);
-    if (!post) throw new NotFoundException('Post not found');
+    if (!post) throw new DomainNotFoundException('Post not found');
 
     const user = await this.usersRepository.getById(userId);
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new DomainNotFoundException('User not found');
 
     const comment = this.CommentModel.createComment({
       postId,
@@ -50,7 +51,7 @@ export class CommentsService {
 
   async update(commentId: string, body: UpdateCommentDto) {
     const comment = await this.commentsRepository.getById(commentId);
-    if (!comment) throw new NotFoundException('Comment not found');
+    if (!comment) throw new DomainNotFoundException('Comment not found');
     comment.update(body);
     await this.commentsRepository.saveComment(comment);
   }
@@ -66,7 +67,7 @@ export class CommentsService {
   ) {
     const comment = await this.commentsRepository.getById(commentId);
 
-    if (!comment) throw new NotFoundException('Comment not found');
+    if (!comment) throw new DomainNotFoundException('Comment not found');
 
     const like = await this.commentsRepository.getLikeRecord(commentId, userId);
 

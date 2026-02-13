@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { GetCommentsQueryParams } from '../api/input-dto/get-comments-query-params.input-dto';
 import { getDbFilters } from '../../../../core/utils/get-db-filters';
 import {
@@ -15,6 +15,7 @@ import {
   CommentLikeModelName,
 } from '../domain/comment-like.entity';
 import { LikeStatus } from '../../../../core/enums/like-status';
+import { DomainNotFoundException } from '../../../../core/exceptions/domain-exceptions';
 
 @Injectable()
 export class CommentsQueryRepository {
@@ -100,7 +101,7 @@ export class CommentsQueryRepository {
     userId?: string,
   ): Promise<CommentViewDto | null> => {
     const entity = await this.CommentModel.findById(id).lean();
-    if (!entity) throw new NotFoundException('Comment not found');
+    if (!entity) throw new DomainNotFoundException('Comment not found');
 
     const likeRecords = await this.CommentLikeModel.find({
       commentId: String(entity._id),

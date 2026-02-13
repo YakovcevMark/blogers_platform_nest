@@ -13,50 +13,51 @@ import { UserViewDto } from '../api/view-dto/users.view-dto';
 export class UsersRepository {
   constructor(@InjectModel(UserModelName) private UserModel: UserModel) {}
 
-  public getById = async (id?: string): Promise<UserDocument | null> => {
+  async getById(id?: string): Promise<UserDocument | null> {
     return this.UserModel.findOne({ _id: new ObjectId(id) });
-  };
+  }
 
-  public getByCode = async (code: string): Promise<UserDocument | null> => {
+  async getByCode(code: string): Promise<UserDocument | null> {
     return this.UserModel.findOne({
-      'emailConformation.codes.code': code,
+      'emailConfirmation.codes.code': code,
     });
-  };
-  public getUserByLoginOrEmail = async (
+  }
+
+  async getUserByLoginOrEmail(
     loginOrEmail: string,
-  ): Promise<UserDocument | null> => {
+  ): Promise<UserDocument | null> {
     return this.UserModel.findOne(
       getDbFilters<UserViewDto>([
         { fieldName: 'login', queryParam: loginOrEmail, isStrictEqual: true },
         { fieldName: 'email', queryParam: loginOrEmail, isStrictEqual: true },
       ]),
     );
-  };
+  }
 
-  public isUserWithEmailExist = async (email: string): Promise<boolean> => {
+  async isUserWithEmailExist(email: string): Promise<boolean> {
     const count = await this.UserModel.countDocuments(
       getDbFilters<UserViewDto>([
         { fieldName: 'email', queryParam: email, isStrictEqual: true },
       ]),
     );
     return count > 0;
-  };
+  }
 
-  public isUserWithLoginExist = async (login: string): Promise<boolean> => {
+  async isUserWithLoginExist(login: string): Promise<boolean> {
     const count = await this.UserModel.countDocuments(
       getDbFilters<UserViewDto>([
         { fieldName: 'login', queryParam: login, isStrictEqual: true },
       ]),
     );
     return count > 0;
-  };
+  }
 
   async save(model: UserDocument) {
     await model.save();
   }
 
-  public remove = async (id: string): Promise<boolean> => {
+  async remove(id: string): Promise<boolean> {
     const response = await this.UserModel.deleteOne({ _id: new ObjectId(id) });
     return response.deletedCount > 0;
-  };
+  }
 }

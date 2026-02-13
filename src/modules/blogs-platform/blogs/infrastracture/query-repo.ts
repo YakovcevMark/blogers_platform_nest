@@ -1,11 +1,12 @@
 import { ObjectId } from 'mongodb';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { BlogViewDto } from '../api/view-dto/blogs.view-dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { GetBlogsQueryParams } from '../api/input-dto/get-blogs-query-params.input-dto';
 import { BlogModel, BlogModelName } from '../domain/blog.entity';
 import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
 import { getDbFilters } from '../../../../core/utils/get-db-filters';
+import { DomainNotFoundException } from '../../../../core/exceptions/domain-exceptions';
 
 @Injectable()
 export class BlogsQueryRepository {
@@ -52,7 +53,7 @@ export class BlogsQueryRepository {
 
   async getById(id: string): Promise<BlogViewDto> {
     const blog = await this.BlogModel.findOne({ _id: new ObjectId(id) }).lean();
-    if (!blog) throw new NotFoundException('Blog not found');
+    if (!blog) throw new DomainNotFoundException('Blog not found');
     return BlogViewDto.mapToView(blog);
   }
 }

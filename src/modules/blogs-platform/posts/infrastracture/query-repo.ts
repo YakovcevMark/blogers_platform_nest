@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { PostModel, PostModelName } from '../domain/post.entity';
 import { PostLikeModel, PostLikeModelName } from '../domain/post-likes.entity';
@@ -6,6 +6,7 @@ import { GetPostsQueryParams } from '../api/input-dto/get-posts-query-params.inp
 import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
 import { PostViewDto } from '../api/view-dto/posts.view-dto';
 import { getDbFilters } from '../../../../core/utils/get-db-filters';
+import { DomainNotFoundException } from '../../../../core/exceptions/domain-exceptions';
 
 @Injectable()
 export class PostsQueryRepository {
@@ -70,7 +71,8 @@ export class PostsQueryRepository {
     userId?: string,
   ): Promise<PostViewDto | null> => {
     const entity = await this.PostModel.findById(id).lean();
-    if (!entity) throw new NotFoundException('Post with given id not found');
+    if (!entity)
+      throw new DomainNotFoundException('Post with given id not found');
     const currentSessionUserRecord = await this.PostLikeModel.findOne({
       postId: id,
       userId,

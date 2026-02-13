@@ -6,6 +6,9 @@ import { PaginatedViewDto } from '../../../core/dto/base.paginated.view-dto';
 import { UserViewDto } from '../api/view-dto/users.view-dto';
 import { UserModel, UserModelName } from '../domain/user.entity';
 import { GetUsersQueryParams } from '../api/input-dto/get-users-query-params.input-dto';
+import { CurrentSessionUserViewDto } from '../api/view-dto/current-session-user.view-dto';
+import { DomainException } from '../../../core/exceptions/domain-exceptions';
+import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-codes';
 
 @Injectable()
 export class UsersQueryRepository {
@@ -23,6 +26,19 @@ export class UsersQueryRepository {
       { fieldName: 'login', queryParam: searchLoginTerm, isStrictEqual },
       { fieldName: 'email', queryParam: searchEmailTerm, isStrictEqual },
     ]);
+  }
+
+  async getCurrentSessionUser(
+    userId: string,
+  ): Promise<CurrentSessionUserViewDto | null> {
+    const entity = await this.UserModel.findById(userId).lean();
+    if (!entity) {
+      throw new DomainException({
+        code: DomainExceptionCode.Unauthorized,
+        message: 'Unauthorized',
+      });
+    }
+    return CurrentSessionUserViewDto.mapToView(entity);
   }
 
   async getAll(
