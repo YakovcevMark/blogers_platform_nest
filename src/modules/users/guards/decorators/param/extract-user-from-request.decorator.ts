@@ -14,3 +14,9 @@ export const ExtractUserFromRequest = createParamDecorator(
     return user;
   },
 );
+export const ExtractNotNecessaryUserFromRequest = createParamDecorator(
+  (data: unknown, context: ExecutionContext): UserContextDto => {
+    const request = context.switchToHttp().getRequest();
+    return request?.user || null;
+  },
+);

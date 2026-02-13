@@ -22,7 +22,10 @@ export class CommentViewDto {
     const dto = new CommentViewDto();
     dto.id = comment._id.toString();
     dto.content = comment.content;
-    dto.commentatorInfo = comment.commentatorInfo;
+    dto.commentatorInfo = {
+      userId: comment.commentatorInfo.userId,
+      userLogin: comment.commentatorInfo.userLogin,
+    };
     dto.createdAt = comment.createdAt.toISOString();
     dto.likesInfo = {
       likesCount,

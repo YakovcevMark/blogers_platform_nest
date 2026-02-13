@@ -1,4 +1,10 @@
 import { IsStringWithTrim } from '../../../../../core/decorators/validation/is-string-with-trim';
+import { IsUrl } from 'class-validator';
+import {
+  descriptionConstraints,
+  nameConstraints,
+  websiteUrlConstraints,
+} from '../../domain/blog.entity';
 
 /**
  * @property {string} name - maxLength: 15.
@@ -6,10 +12,17 @@ import { IsStringWithTrim } from '../../../../../core/decorators/validation/is-s
  * @property {number} websiteUrl - maxLength: 100.
  */
 export class CreateBlogInputDto {
-  @IsStringWithTrim(1, 15)
+  @IsStringWithTrim(nameConstraints.minLength, nameConstraints.maxLength)
   name: string;
-  @IsStringWithTrim(1, 500)
+  @IsStringWithTrim(
+    descriptionConstraints.minLength,
+    descriptionConstraints.maxLength,
+  )
   description: string;
-  @IsStringWithTrim(1, 100)
+  @IsStringWithTrim(
+    websiteUrlConstraints.minLength,
+    websiteUrlConstraints.maxLength,
+  )
+  @IsUrl()
   websiteUrl: string;
 }

@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { BlogsQueryRepository } from '../infrastracture/query-repo';
 import { BlogsService } from '../application/blogs.service';
@@ -19,6 +20,10 @@ import { PostsQueryRepository } from '../../posts/infrastracture/query-repo';
 import { PostsService } from '../../posts/application/posts.service';
 import { CreateBlogPostInputDto } from './input-dto/blog-post.input-dto';
 import { GetPostsQueryParams } from '../../posts/api/input-dto/get-posts-query-params.input-dto';
+import { BasicAuthGuard } from '../../../users/guards/basic-auth.guard';
+import { JwtOptionalAuthGuard } from '../../../users/guards/jwt-optional-auth.guard';
+import { ExtractNotNecessaryUserFromRequest } from '../../../users/guards/decorators/param/extract-user-from-request.decorator';
+import { NotNecessaryUserContextDto } from '../../../users/guards/dto/user-context.dto';
 
 @Controller('blogs')
 export class BlogsController {
@@ -39,25 +44,33 @@ export class BlogsController {
     return this.blogsQueryRepository.getById(id);
   }
 
+  @UseGuards(BasicAuthGuard)
   @Post()
   async createBlog(@Body() body: CreateBlogInputDto) {
     const id = await this.blogsService.create(body);
     return this.blogsQueryRepository.getById(id);
   }
 
+  @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id')
   async updateBlog(@Param('id') id: string, @Body() body: UpdateBlogDto) {
     return this.blogsService.update(id, body);
   }
 
+  @UseGuards(JwtOptionalAuthGuard)
   @Get(':id/posts')
-  async getPosts(@Query() query: GetPostsQueryParams, @Param('id') id: string) {
+  async getPosts(
+    @Query() query: GetPostsQueryParams,
+    @Param('id') id: string,
+    @ExtractNotNecessaryUserFromRequest() user: NotNecessaryUserContextDto,
+  ) {
     await this.blogsQueryRepository.getById(id);
     query.blogId = id;
-    return this.postQueryRepository.getAll(query);
+    return this.postQueryRepository.getAll(query, user?.id);
   }
 
+  @UseGuards(BasicAuthGuard)
   @Post(':id/posts')
   async createPosts(
     @Param('id') id: string,
@@ -72,6 +85,7 @@ export class BlogsController {
     return this.postQueryRepository.getById(newPostId);
   }
 
+  @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async deleteBlog(@Param('id') id: string) {

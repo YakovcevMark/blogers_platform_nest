@@ -5,8 +5,12 @@ import { UsersService } from './application/users.service';
 import { UsersController } from './api/users.controller';
 import { UsersQueryRepository } from './infrastructure/users.query-repo';
 import { UsersRepository } from './infrastructure/users.repo';
-import { JwtModule } from '@nestjs/jwt';
-import { jwtConstants } from './constants';
+import { JwtModule, JwtService } from '@nestjs/jwt';
+import {
+  ACCESS_TOKEN_INJECT_TOKEN,
+  jwtConstants,
+  REFRESH_TOKEN_INJECT_TOKEN,
+} from './constants';
 import { PassportModule } from '@nestjs/passport';
 import { LocalStrategy } from './guards/stratigies/local-auth.strategy';
 import { JwtStrategy } from './guards/stratigies/jwt-auth.strategy';
@@ -22,11 +26,7 @@ import {
 @Module({
   imports: [
     PassportModule,
-    JwtModule.register({
-      global: true,
-      secret: jwtConstants.secret,
-      signOptions: { expiresIn: '60m' },
-    }),
+    JwtModule,
     MongooseModule.forFeature([{ name: UserModelName, schema: UserSchema }]),
     MongooseModule.forFeature([
       {
@@ -37,6 +37,32 @@ import {
   ],
   controllers: [UsersController, AuthController],
   providers: [
+    {
+      provide: ACCESS_TOKEN_INJECT_TOKEN,
+      useFactory: (): JwtService => {
+        return new JwtService({
+          secret: jwtConstants.access_token_secret,
+          signOptions: { expiresIn: '15m' },
+        });
+      },
+      inject: [
+        /*TODO: inject configService. will be in the following lessons*/
+      ],
+    },
+
+    {
+      provide: REFRESH_TOKEN_INJECT_TOKEN,
+      useFactory: (): JwtService => {
+        return new JwtService({
+          secret: jwtConstants.refresh_token_secret,
+          signOptions: { expiresIn: '25m' },
+        });
+      },
+      inject: [
+        /*TODO: inject configService. will be in the following lessons*/
+      ],
+    },
+
     UsersService,
     UsersQueryRepository,
     UsersRepository,

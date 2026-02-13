@@ -27,7 +27,7 @@ export class CommentsService {
   async create(
     postId: string,
     body: CreateCommentInputDto,
-    userId?: string,
+    userId: string,
   ): Promise<string> {
     const post = await this.postsRepository.getById(postId);
     if (!post) throw new DomainNotFoundException('Post not found');
@@ -49,14 +49,18 @@ export class CommentsService {
     return comment._id.toString();
   }
 
-  async update(commentId: string, body: UpdateCommentDto) {
+  async update(commentId: string, body: UpdateCommentDto, userId: string) {
     const comment = await this.commentsRepository.getById(commentId);
     if (!comment) throw new DomainNotFoundException('Comment not found');
+    comment.checkIsOwner(userId);
     comment.update(body);
     await this.commentsRepository.saveComment(comment);
   }
 
-  async remove(id: string): Promise<boolean> {
+  async remove(id: string, userId: string): Promise<boolean> {
+    const comment = await this.commentsRepository.getById(id);
+    if (!comment) throw new DomainNotFoundException('Comment not found');
+    comment.checkIsOwner(userId);
     return await this.commentsRepository.remove(id);
   }
 

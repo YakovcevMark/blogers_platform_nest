@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { UsersQueryRepository } from '../infrastructure/users.query-repo';
@@ -18,6 +19,9 @@ import { ChangePasswordInputDto } from './input-dto/change-password.input-dto';
 import { ConfirmCodeInputDto } from './input-dto/confirm-code.input-dto';
 import { ResendEmailConfirmationInputDto } from './input-dto/resend-email-confirmation.input-dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { LoginSuccessViewDto } from './view-dto/login-success.view-dto';
+import { REFRESH_TOKEN_COOKIE_NAME } from '../constants';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -29,8 +33,20 @@ export class AuthController {
   @Post('login')
   @UseGuards(LocalAuthGuard)
   @HttpCode(HttpStatus.OK)
-  login(@ExtractUserFromRequest() user: UserContextDto) {
-    return this.authService.login(user.id);
+  async login(
+    @ExtractUserFromRequest() user: UserContextDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<LoginSuccessViewDto> {
+    const tokens = await this.authService.login(user.id);
+
+    response.cookie(REFRESH_TOKEN_COOKIE_NAME, tokens.refreshToken, {
+      httpOnly: true,
+      secure: true,
+    });
+
+    return {
+      accessToken: tokens.accessToken,
+    };
   }
 
   @Post('password-recovery')

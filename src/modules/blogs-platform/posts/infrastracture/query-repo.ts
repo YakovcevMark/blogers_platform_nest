@@ -17,10 +17,10 @@ export class PostsQueryRepository {
   ) {}
 
   public getAll = async (
-    query: GetPostsQueryParams & { userId?: string },
+    query: GetPostsQueryParams,
+    userId?: string,
   ): Promise<PaginatedViewDto<PostViewDto[]>> => {
-    const { blogId, userId, pageNumber, pageSize, sortDirection, sortBy } =
-      query;
+    const { blogId, pageNumber, pageSize, sortDirection, sortBy } = query;
     const items = await this.PostModel.find(
       getDbFilters<PostViewDto>([{ fieldName: 'blogId', queryParam: blogId }]),
     )

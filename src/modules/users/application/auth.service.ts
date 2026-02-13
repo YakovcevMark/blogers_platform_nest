@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { UsersRepository } from '../infrastructure/users.repo';
 import { SmtpManager } from '../../../core/application/smpt.manager';
 import { JwtService } from '@nestjs/jwt';
@@ -20,7 +20,11 @@ import { randomUUID } from 'crypto';
 import { ConfirmCodeInputDto } from '../api/input-dto/confirm-code.input-dto';
 import { ResendEmailConfirmationInputDto } from '../api/input-dto/resend-email-confirmation.input-dto';
 import { CreateUserInputDto } from '../api/input-dto/user.input-dto';
-import { LoginSuccessViewDto } from '../api/view-dto/login-success.view-dto';
+import { LoginCommandSuccessViewDto } from '../api/view-dto/login-success.view-dto';
+import {
+  ACCESS_TOKEN_INJECT_TOKEN,
+  REFRESH_TOKEN_INJECT_TOKEN,
+} from '../constants';
 
 @Injectable()
 export class AuthService {
@@ -30,7 +34,10 @@ export class AuthService {
     @InjectModel(UserModelName) private UserModel: UserModel,
     private usersRepository: UsersRepository,
     private smtpManager: SmtpManager,
-    private jwtService: JwtService,
+    @Inject(ACCESS_TOKEN_INJECT_TOKEN)
+    private accessTokenJwtService: JwtService,
+    @Inject(REFRESH_TOKEN_INJECT_TOKEN)
+    private refreshTokenJwtService: JwtService,
     private bcryptService: BcryptService,
     private passwordRecoveryCodesRepository: PasswordRecoveryCodesRepository,
     private usersService: UsersService,
@@ -179,10 +186,15 @@ export class AuthService {
     return userDB;
   }
 
-  login(userId: string): LoginSuccessViewDto {
+  async login(userId: string): Promise<LoginCommandSuccessViewDto> {
     const payload = { userId };
+    const tokens = await Promise.all([
+      this.accessTokenJwtService.signAsync(payload),
+      this.refreshTokenJwtService.signAsync(payload),
+    ]);
     return {
-      accessToken: this.jwtService.sign(payload),
+      accessToken: tokens[0],
+      refreshToken: tokens[1],
     };
   }
 

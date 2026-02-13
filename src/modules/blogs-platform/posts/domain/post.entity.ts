@@ -3,6 +3,20 @@ import { CreatePostDomainDto } from './dto/create-post-domain.input-dto';
 import { HydratedDocument, Model } from 'mongoose';
 import { UpdatePostDto } from '../api/input-dto/update-post.input-dto';
 import { LikeStatus } from '../../../../core/enums/like-status';
+import { PostLikeDocument } from './post-likes.entity';
+
+export const titleConstraints = {
+  minLength: 1,
+  maxLength: 30,
+};
+export const shortDescriptionConstraints = {
+  minLength: 1,
+  maxLength: 30,
+};
+export const contentConstraints = {
+  minLength: 1,
+  maxLength: 30,
+};
 
 @Schema({ _id: false })
 class NewestLike {
@@ -36,19 +50,19 @@ export class Post {
    * The title: of Post
    * @type {String}
    */
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, ...titleConstraints })
   title: string;
   /**
    * The shortDescription of Post
    * @type {String}
    */
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, ...shortDescriptionConstraints })
   shortDescription: string;
   /**
    * The content of Post
    * @type {String}
    */
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, ...contentConstraints })
   content: string;
 
   /**
@@ -105,6 +119,14 @@ export class Post {
         this.extendedLikesInfo.likesCount--;
       }
     }
+  }
+
+  setNewestLikes(likeRecords: PostLikeDocument[]) {
+    this.extendedLikesInfo.newestLikes = likeRecords.map((likeRecords) => ({
+      addedAt: likeRecords.createdAt,
+      login: likeRecords.login,
+      userId: likeRecords.userId,
+    }));
   }
 
   static createPost(dto: CreatePostDomainDto): PostDocument {

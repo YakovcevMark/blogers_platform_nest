@@ -27,6 +27,13 @@ import { CommentsQueryRepository } from './comments/infrastracture/query-repo';
 import { CommentsService } from './comments/application/comments.service';
 import { BlogModelName, BlogSchema } from './blogs/domain/blog.entity';
 import { UserModule } from '../users/user.module';
+import { ChangeCommentLikeStatusUseCase } from './comments/application/usecases/change-comment-like-status.usecase';
+import { ChangePostLikeStatusUseCase } from './posts/application/usecases/change-post-like-status.usecase';
+
+const commandHandlers = [
+  ChangeCommentLikeStatusUseCase,
+  ChangePostLikeStatusUseCase,
+];
 
 @Module({
   imports: [
@@ -45,6 +52,7 @@ import { UserModule } from '../users/user.module';
   ],
   controllers: [BlogsController, PostsController, CommentsController],
   providers: [
+    ...commandHandlers,
     BlogsQueryRepository,
     BlogsRepository,
     BlogsService,

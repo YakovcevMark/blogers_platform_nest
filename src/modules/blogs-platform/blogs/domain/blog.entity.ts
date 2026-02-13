@@ -3,25 +3,42 @@ import { UpdateBlogDto } from '../api/input-dto/update-blog.input-dto';
 import { CreateBlogDomainDto } from './dto/create-blog-domain.input-dto';
 import { HydratedDocument, Model } from 'mongoose';
 
+export const nameConstraints = {
+  minLength: 1,
+  maxLength: 15,
+};
+export const descriptionConstraints = {
+  minLength: 1,
+  maxLength: 500,
+};
+export const websiteUrlConstraints = {
+  minLength: 1,
+  maxLength: 500,
+  match: [
+    /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/,
+    'Пожалуйста, заполните корректный URL',
+  ] as [RegExp, string],
+};
+
 @Schema({ timestamps: true })
 export class Blog {
   /**
    * The name: of Blog
    * @type {String}
    */
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, ...nameConstraints })
   name: string;
   /**
    * The description of Blog
    * @type {String}
    */
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, ...descriptionConstraints })
   description: string;
   /**
    * The websiteUrl of Blog
    * @type {String}
    */
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, ...websiteUrlConstraints })
   websiteUrl: string;
 
   /**
