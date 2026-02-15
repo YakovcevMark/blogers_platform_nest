@@ -19,15 +19,28 @@ import { ChangePasswordInputDto } from './input-dto/change-password.input-dto';
 import { ConfirmCodeInputDto } from './input-dto/confirm-code.input-dto';
 import { ResendEmailConfirmationInputDto } from './input-dto/resend-email-confirmation.input-dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
-import { LoginSuccessViewDto } from './view-dto/login-success.view-dto';
+import {
+  LoginCommandSuccessViewDto,
+  LoginSuccessViewDto,
+} from './view-dto/login-success.view-dto';
 import { REFRESH_TOKEN_COOKIE_NAME } from '../constants';
 import { Response } from 'express';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { RegistrationCommand } from '../application/usecases/registration.usecase';
+import { ConfirmEmailCodeCommand } from '../application/usecases/confirm-email-code.usecase';
+import { RecoverPasswordCommand } from '../application/usecases/recover-password.usecase';
+import { ChangePasswordCommand } from '../application/usecases/change-password.usecase';
+import { ResendEmailConfirmationCommand } from '../application/usecases/resend-email-confirmation-code.usecase';
+import { LoginCommand } from '../application/usecases/login.usecase';
+import { GetCurrentSessionUserQuery } from '../application/queries/get-current-session-user.query';
+import { CurrentSessionUserViewDto } from './view-dto/current-session-user.view-dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(
-    private authService: AuthService,
     private usersQueryRepository: UsersQueryRepository,
+    private commandBus: CommandBus,
+    private queryBus: QueryBus,
   ) {}
 
   @Post('login')
@@ -37,7 +50,10 @@ export class AuthController {
     @ExtractUserFromRequest() user: UserContextDto,
     @Res({ passthrough: true }) response: Response,
   ): Promise<LoginSuccessViewDto> {
-    const tokens = await this.authService.login(user.id);
+    const tokens = await this.commandBus.execute<
+      LoginCommand,
+      LoginCommandSuccessViewDto
+    >(new LoginCommand(user.id));
 
     response.cookie(REFRESH_TOKEN_COOKIE_NAME, tokens.refreshToken, {
       httpOnly: true,
@@ -52,25 +68,25 @@ export class AuthController {
   @Post('password-recovery')
   @HttpCode(HttpStatus.NO_CONTENT)
   async passwordRecovery(@Body() body: PasswordRecoveringInputDto) {
-    return this.authService.recoverPassword(body);
+    return this.commandBus.execute(new RecoverPasswordCommand(body));
   }
 
   @Post('new-password')
   @HttpCode(HttpStatus.NO_CONTENT)
   async newPassword(@Body() body: ChangePasswordInputDto) {
-    return this.authService.setNewPassword(body);
+    return this.commandBus.execute(new ChangePasswordCommand(body));
   }
 
   @Post('registration-confirmation')
   @HttpCode(HttpStatus.NO_CONTENT)
   async registrationConfirmation(@Body() body: ConfirmCodeInputDto) {
-    return this.authService.confirmCode(body);
+    return this.commandBus.execute(new ConfirmEmailCodeCommand(body));
   }
 
   @Post('registration')
   @HttpCode(HttpStatus.NO_CONTENT)
   async registration(@Body() body: CreateUserInputDto) {
-    return this.authService.registration(body);
+    return this.commandBus.execute(new RegistrationCommand(body));
   }
 
   @Post('registration-email-resending')
@@ -78,12 +94,15 @@ export class AuthController {
   async registrationEmailResending(
     @Body() body: ResendEmailConfirmationInputDto,
   ) {
-    return this.authService.resendEmailConfirmationCode(body);
+    return this.commandBus.execute(new ResendEmailConfirmationCommand(body));
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getMe(@ExtractUserFromRequest() user: UserContextDto) {
-    return this.usersQueryRepository.getCurrentSessionUser(user.id);
+    return this.queryBus.execute<
+      GetCurrentSessionUserQuery,
+      CurrentSessionUserViewDto
+    >(new GetCurrentSessionUserQuery(user.id));
   }
 }

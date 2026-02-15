@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { UserModelName, UserSchema } from './domain/user.entity';
 import { MongooseModule } from '@nestjs/mongoose';
-import { UsersService } from './application/users.service';
 import { UsersController } from './api/users.controller';
 import { UsersQueryRepository } from './infrastructure/users.query-repo';
 import { UsersRepository } from './infrastructure/users.repo';
@@ -22,6 +21,33 @@ import {
   PasswordRecoveryCodeModelName,
   PasswordRecoveryCodeSchema,
 } from './domain/password-recovery-code.entity';
+import { RegistrationUseCase } from './application/usecases/registration.usecase';
+import { ConfirmEmailCodeUseCase } from './application/usecases/confirm-email-code.usecase';
+import { RecoverPasswordUseCase } from './application/usecases/recover-password.usecase';
+import { ChangePasswordUseCase } from './application/usecases/change-password.usecase';
+import { ResendEmailConfirmationUseCase } from './application/usecases/resend-email-confirmation-code.usecase';
+import { LoginUseCase } from './application/usecases/login.usecase';
+import { GetCurrentSessionUserQueryHandler } from './application/queries/get-current-session-user.query';
+import { CreateUserUseCase } from './application/usecases/create-user.usecase';
+import { DeleteUserUseCase } from './application/usecases/delete-user.usecase';
+import { GetUsersQueryHandler } from './application/queries/get-users.query';
+import { GetUserByIdQueryHandler } from './application/queries/get-user-by-id.query';
+
+const commandHandlers = [
+  RegistrationUseCase,
+  ConfirmEmailCodeUseCase,
+  RecoverPasswordUseCase,
+  ChangePasswordUseCase,
+  ResendEmailConfirmationUseCase,
+  LoginUseCase,
+  CreateUserUseCase,
+  DeleteUserUseCase,
+];
+const queryHandlers = [
+  GetCurrentSessionUserQueryHandler,
+  GetUsersQueryHandler,
+  GetUserByIdQueryHandler,
+];
 
 @Module({
   imports: [
@@ -37,6 +63,8 @@ import {
   ],
   controllers: [UsersController, AuthController],
   providers: [
+    ...commandHandlers,
+    ...queryHandlers,
     {
       provide: ACCESS_TOKEN_INJECT_TOKEN,
       useFactory: (): JwtService => {
@@ -62,8 +90,6 @@ import {
         /*TODO: inject configService. will be in the following lessons*/
       ],
     },
-
-    UsersService,
     UsersQueryRepository,
     UsersRepository,
     LocalStrategy,

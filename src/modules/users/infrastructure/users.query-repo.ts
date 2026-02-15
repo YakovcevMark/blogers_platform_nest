@@ -30,7 +30,7 @@ export class UsersQueryRepository {
 
   async getCurrentSessionUser(
     userId: string,
-  ): Promise<CurrentSessionUserViewDto | null> {
+  ): Promise<CurrentSessionUserViewDto> {
     const entity = await this.UserModel.findById(userId).lean();
     if (!entity) {
       throw new DomainException({
