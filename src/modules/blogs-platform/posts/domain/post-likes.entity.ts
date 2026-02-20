@@ -1,8 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Like } from '../../../../core/dto/base.like.dto';
 import { HydratedDocument, Model } from 'mongoose';
-import { CommentLikeDomainInputDto } from '../../comments/domain/dto/create-comment-like-domain.input-dto';
-import { CommentLikeDocument } from '../../comments/domain/comment-like.entity';
 import { PostLikeDomainInputDto } from './dto/create-post-like-domain.input-dto';
 
 @Schema({ timestamps: true })
