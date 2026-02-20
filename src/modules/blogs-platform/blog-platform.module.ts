@@ -18,21 +18,50 @@ import { PostsController } from './posts/api/posts.controller';
 import { CommentsController } from './comments/api/comments.controller';
 import { BlogsQueryRepository } from './blogs/infrastracture/query-repo';
 import { BlogsRepository } from './blogs/infrastracture/repo';
-import { BlogsService } from './blogs/application/blogs.service';
 import { PostsRepository } from './posts/infrastracture/repo';
 import { PostsQueryRepository } from './posts/infrastracture/query-repo';
-import { PostsService } from './posts/application/posts.service';
 import { CommentsRepository } from './comments/infrastracture/repo';
 import { CommentsQueryRepository } from './comments/infrastracture/query-repo';
-import { CommentsService } from './comments/application/comments.service';
 import { BlogModelName, BlogSchema } from './blogs/domain/blog.entity';
 import { UserModule } from '../users/user.module';
 import { ChangeCommentLikeStatusUseCase } from './comments/application/usecases/change-comment-like-status.usecase';
 import { ChangePostLikeStatusUseCase } from './posts/application/usecases/change-post-like-status.usecase';
+import { CreateCommentUseCase } from './comments/application/usecases/create-comment.usecase';
+import { UpdateCommentUseCase } from './comments/application/usecases/update-comment.usecase';
+import { RemoveCommentUseCase } from './comments/application/usecases/remove-comment.usecase';
+import { GetCommentsQueryHandler } from './comments/application/queries/get-comments.query';
+import { GetCommentByIdQueryHandler } from './comments/application/queries/get-comment-by-id.query';
+import { CreatePostUseCase } from './posts/application/usecases/create-post.usecase';
+import { UpdatePostUseCase } from './posts/application/usecases/update-post.usecase';
+import { GetPostsQueryHandler } from './posts/application/queries/get-posts.query';
+import { GetPostByIdQueryHandler } from './posts/application/queries/get-post-by-id.query';
+import { GetBlogByIdQueryHandler } from './blogs/application/queries/get-blog-by-id.query';
+import { CreateBlogUseCase } from './blogs/application/usecases/create-blog.usecase';
+import { UpdateBlogUseCase } from './blogs/application/usecases/update-blog.usecase';
+import { GetBlogsQueryHandler } from './blogs/application/queries/get-blogs.query';
+import { RemoveBlogUseCase } from './blogs/application/usecases/remove-blog.usecase';
+import { RemovePostUseCase } from './posts/application/usecases/remove-post.usecase';
 
 const commandHandlers = [
   ChangeCommentLikeStatusUseCase,
   ChangePostLikeStatusUseCase,
+  CreateCommentUseCase,
+  UpdateCommentUseCase,
+  RemoveCommentUseCase,
+  CreatePostUseCase,
+  UpdatePostUseCase,
+  RemovePostUseCase,
+  CreateBlogUseCase,
+  UpdateBlogUseCase,
+  RemoveBlogUseCase,
+];
+const queryHandlers = [
+  GetCommentsQueryHandler,
+  GetCommentByIdQueryHandler,
+  GetPostsQueryHandler,
+  GetPostByIdQueryHandler,
+  GetBlogByIdQueryHandler,
+  GetBlogsQueryHandler,
 ];
 
 @Module({
@@ -52,16 +81,14 @@ const commandHandlers = [
   ],
   controllers: [BlogsController, PostsController, CommentsController],
   providers: [
+    ...queryHandlers,
     ...commandHandlers,
     BlogsQueryRepository,
     BlogsRepository,
-    BlogsService,
     PostsRepository,
     PostsQueryRepository,
-    PostsService,
     CommentsRepository,
     CommentsQueryRepository,
-    CommentsService,
   ],
   exports: [],
 })

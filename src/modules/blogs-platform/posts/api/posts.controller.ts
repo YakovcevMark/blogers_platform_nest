@@ -5,23 +5,17 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  NotFoundException,
   Param,
   Post,
   Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { PostsQueryRepository } from '../infrastracture/query-repo';
-import { PostsService } from '../application/posts.service';
 import { CreatePostInputDto } from './input-dto/post.input-dto';
 import { GetPostsQueryParams } from './input-dto/get-posts-query-params.input-dto';
-import { CommentsQueryRepository } from '../../comments/infrastracture/query-repo';
 import { GetCommentsQueryParams } from '../../comments/api/input-dto/get-comments-query-params.input-dto';
-import { CommentsService } from '../../comments/application/comments.service';
 import { UpdatePostDto } from './input-dto/update-post.input-dto';
 import { CreateCommentInputDto } from '../../comments/api/input-dto/comment.input-dto';
-import { BlogsQueryRepository } from '../../blogs/infrastracture/query-repo';
 import { JwtAuthGuard } from '../../../users/guards/jwt-auth.guard';
 import {
   ExtractNotNecessaryUserFromRequest,
@@ -32,20 +26,27 @@ import {
   UserContextDto,
 } from '../../../users/guards/dto/user-context.dto';
 import { ChangePostLikeStatusInputDto } from './input-dto/change-post-like-status.input-dto';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { JwtOptionalAuthGuard } from '../../../users/guards/jwt-optional-auth.guard';
 import { ChangePostLikeStatusCommand } from '../application/usecases/change-post-like-status.usecase';
 import { BasicAuthGuard } from '../../../users/guards/basic-auth.guard';
+import { CreateCommentCommand } from '../../comments/application/usecases/create-comment.usecase';
+import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
+import { CommentViewDto } from '../../comments/api/view-dto/comment.view-dto';
+import { GetCommentsQuery } from '../../comments/application/queries/get-comments.query';
+import { CreatePostCommand } from '../application/usecases/create-post.usecase';
+import { UpdatePostCommand } from '../application/usecases/update-post.usecase';
+import { RemovePostCommand } from '../application/usecases/remove-post.usecase';
+import { GetPostByIdQuery } from '../application/queries/get-post-by-id.query';
+import { PostViewDto } from './view-dto/posts.view-dto';
+import { GetPostsQuery } from '../application/queries/get-posts.query';
+import { GetCommentByIdQuery } from '../../comments/application/queries/get-comment-by-id.query';
 
 @Controller('posts')
 export class PostsController {
   constructor(
-    private postQueryRepository: PostsQueryRepository,
-    private postsService: PostsService,
-    private commentsQueryRepository: CommentsQueryRepository,
-    private commentsService: CommentsService,
-    private blogsQueryRepository: BlogsQueryRepository,
-    private readonly commandBus: CommandBus,
+    private commandBus: CommandBus,
+    private queryBus: QueryBus,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -72,10 +73,10 @@ export class PostsController {
     @Param('postId') postId: string,
     @ExtractNotNecessaryUserFromRequest() user: NotNecessaryUserContextDto,
   ) {
-    const post = await this.postQueryRepository.getById(postId);
-    if (!post) throw new NotFoundException('Post not found');
-    query.postId = post.id;
-    return this.commentsQueryRepository.getAll(query, user?.id);
+    return this.queryBus.execute<
+      GetCommentsQuery,
+      PaginatedViewDto<CommentViewDto[]>
+    >(new GetCommentsQuery(postId, query, user?.id));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -85,12 +86,14 @@ export class PostsController {
     @Body() body: CreateCommentInputDto,
     @ExtractUserFromRequest() user: UserContextDto,
   ) {
-    const newCommentId = await this.commentsService.create(
-      postId,
-      body,
-      user.id,
+    const newCommentId = await this.commandBus.execute<
+      CreateCommentCommand,
+      string
+    >(new CreateCommentCommand(postId, body, user.id));
+
+    return this.queryBus.execute<GetCommentByIdQuery, CommentViewDto>(
+      new GetCommentByIdQuery(newCommentId),
     );
-    return this.commentsQueryRepository.getById(newCommentId);
   }
 
   @UseGuards(JwtOptionalAuthGuard)
@@ -99,15 +102,21 @@ export class PostsController {
     @Query() query: GetPostsQueryParams,
     @ExtractNotNecessaryUserFromRequest() user: NotNecessaryUserContextDto,
   ) {
-    return this.postQueryRepository.getAll(query, user?.id);
+    return this.queryBus.execute<
+      GetPostsQuery,
+      PaginatedViewDto<PostViewDto[]>
+    >(new GetPostsQuery(query, user?.id));
   }
 
   @UseGuards(BasicAuthGuard)
   @Post()
   async createPost(@Body() body: CreatePostInputDto) {
-    const blog = await this.blogsQueryRepository.getById(body.blogId);
-    const id = await this.postsService.create({ ...body, blogName: blog.name });
-    return this.postQueryRepository.getById(id);
+    const id = await this.commandBus.execute<CreatePostCommand, string>(
+      new CreatePostCommand(body),
+    );
+    return this.queryBus.execute<GetPostByIdQuery, PostViewDto>(
+      new GetPostByIdQuery(id),
+    );
   }
 
   @UseGuards(JwtOptionalAuthGuard)
@@ -116,20 +125,22 @@ export class PostsController {
     @Param('id') id: string,
     @ExtractNotNecessaryUserFromRequest() user: NotNecessaryUserContextDto,
   ) {
-    return this.postQueryRepository.getById(id, user?.id);
+    return this.queryBus.execute<GetPostByIdQuery, PostViewDto>(
+      new GetPostByIdQuery(id, user?.id),
+    );
   }
 
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id')
   async updatePost(@Param('id') id: string, @Body() body: UpdatePostDto) {
-    return this.postsService.update(id, body);
+    return this.commandBus.execute(new UpdatePostCommand(id, body));
   }
 
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async deletePost(@Param('id') id: string) {
-    return this.postsService.remove(id);
+    return this.commandBus.execute(new RemovePostCommand(id));
   }
 }

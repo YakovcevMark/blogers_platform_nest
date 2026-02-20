@@ -9,8 +9,6 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { CommentsQueryRepository } from '../infrastracture/query-repo';
-import { CommentsService } from '../application/comments.service';
 import { UpdateCommentDto } from './input-dto/update-comment.input-dto';
 import { JwtOptionalAuthGuard } from '../../../users/guards/jwt-optional-auth.guard';
 import {
@@ -22,16 +20,19 @@ import {
   UserContextDto,
 } from '../../../users/guards/dto/user-context.dto';
 import { JwtAuthGuard } from '../../../users/guards/jwt-auth.guard';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ChangeCommentLikeStatusInputDto } from '../../blogs/api/input-dto/change-comment-like-status.input-dto';
 import { ChangeCommentLikeStatusCommand } from '../application/usecases/change-comment-like-status.usecase';
+import { UpdateCommentCommand } from '../application/usecases/update-comment.usecase';
+import { RemoveCommentCommand } from '../application/usecases/remove-comment.usecase';
+import { GetCommentByIdQuery } from '../application/queries/get-comment-by-id.query';
+import { CommentViewDto } from './view-dto/comment.view-dto';
 
 @Controller('comments')
 export class CommentsController {
   constructor(
-    private commentQueryRepository: CommentsQueryRepository,
-    private commentsService: CommentsService,
-    private readonly commandBus: CommandBus,
+    private commandBus: CommandBus,
+    private queryBus: QueryBus,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -59,7 +60,9 @@ export class CommentsController {
     @Body() body: UpdateCommentDto,
     @ExtractUserFromRequest() user: UserContextDto,
   ) {
-    await this.commentsService.update(commentId, body, user.id);
+    await this.commandBus.execute(
+      new UpdateCommentCommand(commentId, body, user.id),
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -69,7 +72,7 @@ export class CommentsController {
     @Param('commentId') commentId: string,
     @ExtractUserFromRequest() user: UserContextDto,
   ) {
-    await this.commentsService.remove(commentId, user.id);
+    await this.commandBus.execute(new RemoveCommentCommand(commentId, user.id));
   }
 
   @UseGuards(JwtOptionalAuthGuard)
@@ -78,6 +81,8 @@ export class CommentsController {
     @Param('id') id: string,
     @ExtractNotNecessaryUserFromRequest() user: NotNecessaryUserContextDto,
   ) {
-    return this.commentQueryRepository.getById(id, user?.id);
+    return this.queryBus.execute<GetCommentByIdQuery, CommentViewDto>(
+      new GetCommentByIdQuery(id, user?.id),
+    );
   }
 }

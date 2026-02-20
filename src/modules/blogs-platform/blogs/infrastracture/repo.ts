@@ -8,7 +8,7 @@ export class BlogsRepository {
   constructor(@InjectModel(BlogModelName) private BlogModel: BlogModel) {}
 
   async getById(id: string): Promise<BlogDocument | null> {
-    return this.BlogModel.findOne({ _id: new ObjectId(id) }).lean();
+    return this.BlogModel.findOne({ _id: new ObjectId(id) });
   }
 
   async remove(id: string): Promise<boolean> {
